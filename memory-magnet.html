@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edgeline3D — Memory Magnet</title>
+<meta name="description" content="냉장고 자석을 폰으로 탭하면 우리 가족의 사진과 목소리, 영상이 펼쳐집니다. 미주 한인 가족을 위한 NFC 메모리 마그넷, Edgeline3D.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --paper:#F3EBDC;
+    --paper-2:#EDE3D0;
+    --card:#FBF6EC;
+    --ink:#2B2620;
+    --ink-soft:#5C5347;
+    --pine:#274139;
+    --pine-deep:#1E332C;
+    --amber:#E39B3C;
+    --amber-deep:#C9812A;
+    --line:#D9CDB8;
+    --maxw:1120px;
+    --serif:'Gowun Batang', 'Nanum Myeongjo', serif;
+    --hand:'Nanum Pen Script', cursive;
+    --sans:'Pretendard', system-ui, sans-serif;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* faint paper grain */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:radial-gradient(rgba(90,70,40,.05) 1px, transparent 1px);
+    background-size:4px 4px;opacity:.5;
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%}
+
+  h1,h2,h3{font-family:var(--serif);font-weight:700;line-height:1.2;letter-spacing:-.01em}
+  .eyebrow{
+    font-family:var(--sans);font-size:.78rem;font-weight:600;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--amber-deep);
+  }
+  .hand{font-family:var(--hand);font-weight:400}
+
+  /* ---------- NAV ---------- */
+  .nav{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(8px);
+    background:rgba(243,235,220,.82);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:68px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-weight:700;font-size:1.22rem}
+  .brand .dot{
+    width:20px;height:20px;border-radius:6px;background:var(--pine);
+    position:relative;box-shadow:inset 0 0 0 2px rgba(255,255,255,.18);
+  }
+  .brand .dot::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--amber)}
+  .brand small{font-family:var(--sans);font-weight:500;font-size:.62rem;letter-spacing:.14em;color:var(--ink-soft);align-self:flex-start;margin-top:2px}
+  .nav-links{display:flex;gap:30px;align-items:center;font-size:.92rem;font-weight:500}
+  .nav-links a{color:var(--ink-soft);transition:color .2s}
+  .nav-links a:hover{color:var(--ink)}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--sans);font-weight:600;font-size:.92rem;
+    background:var(--pine);color:#F3EBDC;border:none;cursor:pointer;
+    padding:11px 20px;border-radius:999px;transition:transform .15s, background .2s;
+  }
+  .btn:hover{background:var(--pine-deep);transform:translateY(-1px)}
+  .btn.amber{background:var(--amber);color:var(--pine-deep)}
+  .btn.amber:hover{background:var(--amber-deep)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+  .btn.ghost:hover{background:var(--ink);color:var(--paper)}
+  .nav-cta{padding:9px 18px}
+  .nav-toggle{display:none}
+
+  /* ---------- HERO ---------- */
+  .hero{padding:64px 0 40px;position:relative}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+  .hero h1{font-size:clamp(2.4rem,5.2vw,4rem);margin:18px 0 22px}
+  .hero h1 .amberline{color:var(--pine);position:relative;white-space:nowrap}
+  .hero h1 .amberline::after{
+    content:"";position:absolute;left:-2px;right:-2px;bottom:.08em;height:.34em;
+    background:var(--amber);opacity:.42;border-radius:3px;z-index:-1;
+  }
+  .hero p.lead{font-size:1.12rem;color:var(--ink-soft);max-width:36ch;margin-bottom:30px}
+  .hero-cta{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .hero-note{font-family:var(--hand);font-size:1.35rem;color:var(--pine);transform:rotate(-3deg)}
+
+  /* Fridge stage + magnet */
+  .fridge{
+    position:relative;
+    background:
+      linear-gradient(160deg,#EFE7D6, #E4D9C2);
+    border:1px solid var(--line);
+    border-radius:26px;
+    padding:54px 34px 46px;
+    min-height:390px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 30px 60px -34px rgba(40,30,15,.4), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .fridge::before{ /* fridge handle hint */
+    content:"";position:absolute;top:26px;bottom:26px;left:16px;width:6px;border-radius:6px;
+    background:linear-gradient(var(--line),#cbbda2);opacity:.7;
+  }
+  .stage{position:relative;width:220px;height:220px}
+  .magnet{
+    position:absolute;inset:0;margin:auto;width:168px;height:168px;
+    border-radius:34px;border:none;cursor:pointer;padding:0;
+    background:linear-gradient(150deg,#FDFAF3,#F1E7D4);
+    box-shadow:0 16px 30px -12px rgba(40,30,15,.5), inset 0 0 0 1.5px rgba(255,255,255,.7), inset 0 -6px 14px rgba(180,150,100,.18);
+    z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    transition:transform .3s cubic-bezier(.2,.8,.25,1);
+  }
+  .magnet:focus-visible{outline:3px solid var(--pine);outline-offset:4px}
+  .stage:hover .magnet, .stage.is-open .magnet{transform:scale(.94)}
+  .magnet .fam{width:78px;height:auto;color:var(--pine)}
+  .magnet .mtitle{font-family:var(--serif);font-weight:700;font-size:.86rem;color:var(--ink)}
+  .magnet .msub{font-family:var(--sans);font-size:.54rem;letter-spacing:.18em;color:var(--ink-soft)}
+  /* nfc ripple */
+  .ripple{position:absolute;inset:0;margin:auto;width:168px;height:168px;border-radius:34px;z-index:4;pointer-events:none}
+  .ripple::before,.ripple::after{
+    content:"";position:absolute;inset:0;border-radius:34px;border:2px solid var(--amber);
+    opacity:0;animation:ring 3.4s ease-out infinite;
+  }
+  .ripple::after{animation-delay:1.7s}
+  @keyframes ring{0%{transform:scale(1);opacity:.55}70%{opacity:0}100%{transform:scale(1.5);opacity:0}}
+
+  .mem-card{
+    position:absolute;left:50%;top:50%;width:118px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:10px;box-shadow:0 12px 26px -12px rgba(40,30,15,.5);
+    transform:translate(-50%,-50%) scale(.6);opacity:0;z-index:3;
+    transition:transform .45s cubic-bezier(.2,.85,.25,1),opacity .35s;
+  }
+  .mem-card .cap{font-family:var(--hand);font-size:1.05rem;color:var(--pine);line-height:1;margin-top:6px}
+  .mem-photo .ph{height:70px;border-radius:7px;overflow:hidden;background:linear-gradient(135deg,#cfe0d0,#e7d3ac)}
+  .mem-photo .ph svg{width:100%;height:100%;display:block}
+  .mem-voice .wave{display:flex;align-items:flex-end;gap:3px;height:44px;padding:6px 2px}
+  .mem-voice .wave i{flex:1;background:var(--amber);border-radius:2px;display:block}
+  .mem-video .vid{height:70px;border-radius:7px;background:linear-gradient(135deg,#3a5c50,#274139);display:flex;align-items:center;justify-content:center}
+  .mem-video .vid::after{content:"";border-left:16px solid var(--card);border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px}
+
+  .stage:hover .mem-photo, .stage.is-open .mem-photo{transform:translate(-118%,-96%) rotate(-9deg) scale(1);opacity:1}
+  .stage:hover .mem-voice, .stage.is-open .mem-voice{transform:translate(-50%,-158%) rotate(2deg) scale(1);opacity:1}
+  .stage:hover .mem-video, .stage.is-open .mem-video{transform:translate(18%,-92%) rotate(9deg) scale(1);opacity:1}
+
+  .tap-hint{
+    position:absolute;right:26px;bottom:22px;font-family:var(--hand);font-size:1.5rem;color:var(--amber-deep);
+    transform:rotate(-6deg);transition:opacity .3s;
+  }
+  .stage.is-open ~ .tap-hint{opacity:0}
+
+  /* ---------- MARQUEE STRIP ---------- */
+  .strip{background:var(--pine);color:#EFE7D6;padding:16px 0;overflow:hidden;white-space:nowrap;margin-top:24px}
+  .strip .track{display:inline-flex;gap:44px;animation:slide 26s linear infinite;font-family:var(--serif);font-size:1.05rem}
+  .strip .track span{opacity:.9}
+  .strip .track b{color:var(--amber);font-weight:400;font-family:var(--hand);font-size:1.5rem}
+  @keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* ---------- SECTION SHELL ---------- */
+  .section{padding:88px 0}
+  .sec-head{max-width:56ch;margin-bottom:48px}
+  .sec-head h2{font-size:clamp(1.9rem,3.6vw,2.7rem);margin:14px 0 16px}
+  .sec-head p{color:var(--ink-soft);font-size:1.05rem}
+
+  /* ---------- HOW (steps) ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+  .step{position:relative;padding-top:22px}
+  .step .num{font-family:var(--serif);font-size:2.6rem;color:var(--amber);line-height:1}
+  .step h3{font-size:1.24rem;margin:12px 0 8px}
+  .step p{color:var(--ink-soft);font-size:.98rem}
+  .step::before{content:"";position:absolute;top:0;left:0;width:46px;height:3px;background:var(--pine);border-radius:2px}
+  .how-note{margin-top:38px;font-family:var(--hand);font-size:1.5rem;color:var(--pine);text-align:center}
+
+  /* ---------- KEEP (features) ---------- */
+  .keep{background:var(--paper-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .keep-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .kcard{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 22px;
+    transition:transform .25s, box-shadow .25s;
+  }
+  .kcard:hover{transform:translateY(-4px);box-shadow:0 18px 34px -20px rgba(40,30,15,.45)}
+  .kcard .ic{width:40px;height:40px;border-radius:11px;background:var(--pine);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .kcard .ic svg{width:22px;height:22px;color:var(--amber)}
+  .kcard h3{font-size:1.12rem;margin-bottom:6px}
+  .kcard p{font-size:.9rem;color:var(--ink-soft)}
+  .kcard.wide{grid-column:span 4;display:flex;gap:22px;align-items:center;background:linear-gradient(120deg,#FBF6EC,#F3E9D4)}
+  .kcard.wide .ic{margin-bottom:0;flex-shrink:0}
+  .kcard.wide .txt h3{margin-bottom:4px}
+  .kcard.wide .note{font-family:var(--hand);font-size:1.2rem;color:var(--amber-deep);margin-left:auto;flex-shrink:0;transform:rotate(-3deg);text-align:right;line-height:1.1}
+
+  /* ---------- MOMENTS (use cases) ---------- */
+  .moments{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+  .moment{
+    position:relative;border-radius:20px;overflow:hidden;padding:34px 30px;min-height:210px;
+    display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--line);
+    background:var(--card);transition:transform .25s;
+  }
+  .moment:hover{transform:translateY(-4px)}
+  .moment .tag{font-family:var(--hand);font-size:1.35rem;color:var(--amber-deep);margin-bottom:auto}
+  .moment h3{font-size:1.4rem;margin-bottom:8px}
+  .moment p{color:var(--ink-soft);font-size:.97rem;max-width:34ch}
+  .moment .scene{position:absolute;top:-10px;right:-10px;width:130px;height:130px;opacity:.9}
+  .moment.m1{background:linear-gradient(135deg,#EAF0E4,#F6EFDD)}
+  .moment.m2{background:linear-gradient(135deg,#F3EAD6,#F7F1E6)}
+  .moment.m3{background:linear-gradient(135deg,#EDE6F0,#F5EFE2)}
+  .moment.m4{background:linear-gradient(135deg,#E7ECEC,#F2ECDD)}
+
+  /* ---------- WHY (dark) ---------- */
+  .why{background:var(--pine);color:#EFE7D6}
+  .why .eyebrow{color:var(--amber)}
+  .why .sec-head h2{color:#FBF6EC}
+  .why .sec-head p{color:rgba(239,231,214,.72)}
+  .why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-top:8px}
+  .why-item{border-top:2px solid rgba(227,155,60,.5);padding-top:20px}
+  .why-item h3{color:#FBF6EC;font-size:1.35rem;margin-bottom:10px}
+  .why-item p{color:rgba(239,231,214,.75);font-size:.98rem}
+  .why-item .kr{font-family:var(--hand);font-size:1.5rem;color:var(--amber);display:block;margin-bottom:4px}
+
+  /* ---------- PRICING ---------- */
+  .price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:stretch}
+  .plan{
+    background:var(--card);border:1px solid var(--line);border-radius:20px;padding:32px 28px;
+    display:flex;flex-direction:column;transition:transform .25s, box-shadow .25s;
+  }
+  .plan:hover{transform:translateY(-5px);box-shadow:0 24px 44px -26px rgba(40,30,15,.5)}
+  .plan .pname{font-family:var(--sans);font-weight:600;letter-spacing:.05em;color:var(--ink-soft);font-size:.9rem}
+  .plan .amt{font-family:var(--serif);font-size:2.9rem;margin:8px 0 2px}
+  .plan .amt small{font-size:1rem;color:var(--ink-soft);font-family:var(--sans)}
+  .plan ul{list-style:none;margin:20px 0 26px;display:flex;flex-direction:column;gap:11px}
+  .plan li{display:flex;gap:9px;font-size:.95rem;color:var(--ink-soft)}
+  .plan li::before{content:"";width:16px;height:16px;flex-shrink:0;margin-top:4px;border-radius:50%;background:var(--amber);
+    -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/></svg>") center/13px no-repeat;
+          mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/></svg>") center/13px no-repeat;}
+  .plan .btn{justify-content:center;margin-top:auto}
+  .plan.feat{background:var(--pine);color:#EFE7D6;border-color:var(--pine)}
+  .plan.feat .pname{color:var(--amber)}
+  .plan.feat .amt{color:#FBF6EC}
+  .plan.feat .amt small{color:rgba(239,231,214,.7)}
+  .plan.feat li{color:rgba(239,231,214,.82)}
+  .plan.feat .btn{background:var(--amber);color:var(--pine-deep)}
+  .plan.feat .btn:hover{background:var(--amber-deep)}
+  .plan .ribbon{font-family:var(--hand);font-size:1.35rem;color:var(--amber);margin-bottom:2px}
+  .price-foot{text-align:center;color:var(--ink-soft);font-size:.86rem;margin-top:26px}
+
+  /* ---------- CTA ---------- */
+  .cta{padding:96px 0}
+  .cta-box{
+    background:linear-gradient(150deg,#EFE7D6,#E4D9C2);border:1px solid var(--line);border-radius:28px;
+    padding:56px 40px;text-align:center;position:relative;overflow:hidden;
+  }
+  .cta-box h2{font-size:clamp(2rem,4vw,3rem);margin-bottom:14px}
+  .cta-box p{color:var(--ink-soft);font-size:1.08rem;max-width:44ch;margin:0 auto 30px}
+  .cta-form{display:flex;gap:10px;max-width:440px;margin:0 auto;flex-wrap:wrap;justify-content:center}
+  .cta-form input{
+    flex:1;min-width:220px;padding:14px 18px;border-radius:999px;border:1.5px solid var(--line);
+    background:var(--card);font-family:var(--sans);font-size:.98rem;color:var(--ink);
+  }
+  .cta-form input:focus{outline:none;border-color:var(--pine)}
+  .cta-mini{font-family:var(--hand);font-size:1.4rem;color:var(--pine);margin-top:18px}
+
+  /* ---------- FOOTER ---------- */
+  footer{background:var(--pine-deep);color:rgba(239,231,214,.72);padding:52px 0 40px}
+  .foot-grid{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;align-items:flex-start}
+  footer .brand{color:#FBF6EC}
+  footer .brand .dot{background:var(--amber)}
+  footer .brand .dot::after{background:var(--pine-deep)}
+  .foot-links{display:flex;gap:44px;flex-wrap:wrap}
+  .foot-col h4{font-family:var(--sans);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:12px}
+  .foot-col a{display:block;font-size:.92rem;margin-bottom:8px;transition:color .2s}
+  .foot-col a:hover{color:#FBF6EC}
+  .foot-base{margin-top:40px;padding-top:20px;border-top:1px solid rgba(239,231,214,.16);font-size:.82rem;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+  /* ---------- reveal ---------- */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease, transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  /* ---------- responsive ---------- */
+  @media(max-width:900px){
+    .hero-grid{grid-template-columns:1fr;gap:34px}
+    .fridge{order:-1;min-height:340px}
+    .steps,.why-grid{grid-template-columns:1fr}
+    .keep-grid{grid-template-columns:repeat(2,1fr)}
+    .kcard.wide{grid-column:span 2;flex-direction:column;align-items:flex-start}
+    .kcard.wide .note{margin-left:0}
+    .moments{grid-template-columns:1fr}
+    .price-grid{grid-template-columns:1fr}
+    .nav-links{display:none}
+  }
+  @media(max-width:520px){
+    .keep-grid{grid-template-columns:1fr}
+    .kcard.wide{grid-column:span 1}
+    .wrap{padding:0 20px}
+    .hero{padding:44px 0 24px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important}
+    .reveal{opacity:1;transform:none;transition:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html"><span class="dot"></span>Edgeline3D<small>MEMORY&nbsp;MAGNET</small></a>
+    <div class="nav-links">
+      <a href="#how">사용법</a>
+      <a href="#keep">담는 것</a>
+      <a href="#moments">이런 순간</a>
+      <a href="#price">가격</a>
+      <a href="index.html">← Edgeline3D</a>
+    </div>
+    <a href="#cta" class="btn nav-cta">사전예약</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">NFC 메모리 마그넷</span>
+      <h1>우리 집에서<br>가장 자주 여는 문에,<br><span class="amberline">추억을 붙여두세요.</span></h1>
+      <p class="lead">냉장고 자석을 폰으로 살짝 대면, 우리 가족의 사진과 목소리, 영상이 펼쳐집니다. 앨범 깊숙이 넣어두지 말고, 손 닿는 자리에서 매일 만나요.</p>
+      <div class="hero-cta">
+        <a href="#cta" class="btn amber">사전예약 신청</a>
+        <a href="#how" class="btn ghost">어떻게 되나요?</a>
+      </div>
+      <p class="hero-note" style="margin-top:26px">앱 설치도, 회원가입 강요도 없이 →</p>
+    </div>
+
+    <div class="fridge">
+      <div class="stage" id="stage" role="button" tabindex="0" aria-label="메모리 마그넷을 탭해 추억을 펼쳐보기">
+        <span class="ripple" aria-hidden="true"></span>
+        <button class="magnet" aria-hidden="true" tabindex="-1">
+          <svg class="fam" viewBox="0 0 100 60" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="30" cy="16" r="8"/><path d="M18 46c0-9 5-15 12-15s12 6 12 15"/>
+            <circle cx="62" cy="14" r="9"/><path d="M48 48c0-10 6-17 14-17s14 7 14 17"/>
+            <circle cx="47" cy="34" r="6"/><path d="M38 54c0-6 4-11 9-11s9 5 9 11"/>
+            <path d="M44 12c2-3 6-3 7 0 1-3 5-3 7 0-1 3-7 6-7 6s-6-3-7-6z" fill="currentColor" stroke="none" opacity=".8"/>
+          </svg>
+          <span class="mtitle">Our Memory</span>
+          <span class="msub">SINCE 2024</span>
+        </button>
+
+        <div class="mem-card mem-photo" aria-hidden="true">
+          <div class="ph">
+            <svg viewBox="0 0 120 70" preserveAspectRatio="none"><rect width="120" height="70" fill="#cfe0d0"/><circle cx="86" cy="20" r="10" fill="#e7d3ac"/><path d="M0 70 L36 34 L58 54 L82 30 L120 62 V70 Z" fill="#8fae8f"/></svg>
+          </div>
+          <div class="cap">첫 걸음마 🌱</div>
+        </div>
+        <div class="mem-card mem-voice" aria-hidden="true">
+          <div class="wave"><i style="height:30%"></i><i style="height:60%"></i><i style="height:100%"></i><i style="height:45%"></i><i style="height:80%"></i><i style="height:35%"></i><i style="height:70%"></i><i style="height:50%"></i></div>
+          <div class="cap">엄마 목소리 ♪</div>
+        </div>
+        <div class="mem-card mem-video" aria-hidden="true">
+          <div class="vid"></div>
+          <div class="cap">생일 영상 ▶</div>
+        </div>
+      </div>
+      <span class="tap-hint" aria-hidden="true">탭 해보세요!</span>
+    </div>
+  </div>
+</header>
+
+<!-- STRIP -->
+<div class="strip" aria-hidden="true">
+  <div class="track">
+    <span>사진</span><b>·</b><span>목소리</span><b>·</b><span>영상</span><b>·</b><span>AI 음성 편지</span><b>·</b><span>타임캡슐</span><b>·</b>
+    <span>사진</span><b>·</b><span>목소리</span><b>·</b><span>영상</span><b>·</b><span>AI 음성 편지</span><b>·</b><span>타임캡슐</span><b>·</b>
+  </div>
+</div>
+
+<!-- HOW -->
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">사용법</span>
+      <h2>담고, 붙이고, 탭하면 끝.</h2>
+      <p>복잡한 설정은 없어요. 자석 하나에 우리 가족의 이야기를 연결하는 세 단계입니다.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="num">01</div>
+        <h3>담기</h3>
+        <p>앱에서 사진과 목소리, 영상을 올려요. 흩어진 추억을 한곳에 모아 우리만의 페이지를 만듭니다.</p>
+      </div>
+      <div class="step reveal">
+        <div class="num">02</div>
+        <h3>붙이기</h3>
+        <p>자석을 냉장고에 붙여요. 못도, 접착제도 필요 없어요. 현관·책상·어디든 잘 붙습니다.</p>
+      </div>
+      <div class="step reveal">
+        <div class="num">03</div>
+        <h3>탭하기</h3>
+        <p>폰을 살짝 대면 추억 페이지가 바로 열려요. 앱을 깔지 않은 손님도 카메라 없이 볼 수 있어요.</p>
+      </div>
+    </div>
+    <p class="how-note reveal">내용은 언제든 더하고 바꿔요. 자석은 그대로 두고요.</p>
+  </div>
+</section>
+
+<!-- KEEP -->
+<section class="section keep" id="keep">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">담는 것</span>
+      <h2>사진 한 장으론 담기지 않는 것들.</h2>
+      <p>목소리의 떨림, 처음 걷던 순간, 훗날 열어볼 편지까지. 액자가 못 하는 일을 자석 하나가 해냅니다.</p>
+    </div>
+    <div class="keep-grid">
+      <div class="kcard reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m4 18 5-4 4 3 3-2 4 3"/></svg></div>
+        <h3>사진</h3>
+        <p>성장 앨범, 여행, 평범한 하루까지 한 페이지에.</p>
+      </div>
+      <div class="kcard reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M8 7v10M16 7v10M4 10v4M20 10v4"/></svg></div>
+        <h3>목소리</h3>
+        <p>아이의 첫 울음, 안부 인사. 글자보다 오래 남는 소리.</p>
+      </div>
+      <div class="kcard reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg></div>
+        <h3>영상</h3>
+        <p>웃음소리까지 담기는 짧은 순간들을 그대로.</p>
+      </div>
+      <div class="kcard reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20V9a7 7 0 0 1 14 0v11"/><path d="M8 20v-6M16 20v-6M12 13v7"/></svg></div>
+        <h3>타임캡슐</h3>
+        <p>정한 날짜가 오면 열려요. 스무 살 생일, 결혼식 아침에.</p>
+      </div>
+      <div class="kcard wide reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+        <div class="txt">
+          <h3>AI 음성 편지</h3>
+          <p>소중한 목소리로 안부와 편지를 오래 간직해요. 본인·가족의 동의 아래 신중하게 만들어 드립니다.</p>
+        </div>
+        <div class="note">할머니 목소리로<br>읽어주는 동화 📖</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MOMENTS -->
+<section class="section" id="moments">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">이런 순간</span>
+      <h2>매일의 냉장고 앞이, 우리 가족의 이야기방이 돼요.</h2>
+    </div>
+    <div class="moments">
+      <div class="moment m1 reveal">
+        <span class="tag">쑥쑥 자라는 중</span>
+        <h3>우리 아이 크는 순간</h3>
+        <p>초음파부터 첫 걸음마, 유치원 첫날까지. 매달 한 장씩 쌓이는 성장 기록.</p>
+      </div>
+      <div class="moment m2 reveal">
+        <span class="tag">오늘도 평범하게</span>
+        <h3>가족의 하루하루</h3>
+        <p>거창하지 않아도 좋아요. 저녁 식탁, 주말 나들이. 지나면 그리워질 오늘.</p>
+      </div>
+      <div class="moment m3 reveal">
+        <span class="tag">축하해요</span>
+        <h3>기념일과 새 식구</h3>
+        <p>출산·돌·결혼. 축하 메시지와 영상을 모아 두고두고 함께 열어봐요.</p>
+      </div>
+      <div class="moment m4 reveal">
+        <span class="tag">늘 마음에</span>
+        <h3>그리운 사람을 기억하며</h3>
+        <p>생전의 사진과 목소리, 함께한 이야기를 가족이 조용히 나눌 수 있는 자리.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section class="section why" id="why">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">한인 가족을 위해</span>
+      <h2>큰 회사들이 놓친 자리를, 우리가 채웁니다.</h2>
+      <p>미주에 사는 한인 가족의 언어와 정서, 세대 간의 거리를 처음부터 염두에 두고 만들었어요.</p>
+    </div>
+    <div class="why-grid">
+      <div class="why-item reveal">
+        <span class="kr">한국어 그대로</span>
+        <h3>번역투 없는 우리말</h3>
+        <p>앱도 안내도 한국어로. 부모님도 어렵지 않게 사진과 목소리를 올릴 수 있어요.</p>
+      </div>
+      <div class="why-item reveal">
+        <span class="kr">세대를 잇다</span>
+        <h3>멀리 있어도 가깝게</h3>
+        <p>한국의 조부모부터 미국의 손주까지. 링크 하나로 태평양 건너에서도 함께 봅니다.</p>
+      </div>
+      <div class="why-item reveal">
+        <span class="kr">교회와 함께</span>
+        <h3>공동체의 기록</h3>
+        <p>세례·헌아·봉사의 순간을 기념하고 나눌 수 있는 교회 커뮤니티 에디션을 준비 중이에요.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section keep" id="price">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">가격</span>
+      <h2>작게 시작해서, 가족만큼 넓혀가요.</h2>
+      <p>먼저 자석 하나로 시작해 보세요. 담고 싶은 게 많아지면 언제든 넓힐 수 있어요.</p>
+    </div>
+    <div class="price-grid">
+      <div class="plan reveal">
+        <div class="pname">STARTER</div>
+        <div class="amt">$29</div>
+        <ul>
+          <li>Memory Magnet 1개</li>
+          <li>사진 10장</li>
+          <li>음성 메시지 3개</li>
+          <li>추억 페이지 만들기</li>
+        </ul>
+        <a href="#cta" class="btn ghost">이걸로 시작</a>
+      </div>
+      <div class="plan feat reveal">
+        <div class="ribbon">가장 인기 ✦</div>
+        <div class="pname">FAMILY</div>
+        <div class="amt">$99</div>
+        <ul>
+          <li>가족 공유 앨범</li>
+          <li>사진·음성·영상 넉넉히</li>
+          <li>AI 음성 편지</li>
+          <li>타임캡슐</li>
+        </ul>
+        <a href="#cta" class="btn">사전예약</a>
+      </div>
+      <div class="plan reveal">
+        <div class="pname">PREMIUM</div>
+        <div class="amt">$49</div>
+        <ul>
+          <li>사진 50장</li>
+          <li>음성 메시지 20개</li>
+          <li>영상 5개</li>
+          <li>내용 수정 자유롭게</li>
+        </ul>
+        <a href="#cta" class="btn ghost">이걸로 시작</a>
+      </div>
+    </div>
+    <p class="price-foot">사전예약가 기준이에요. 클라우드 보관 정책과 정식 요금은 출시 때 정확히 안내해 드릴게요.</p>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="cta">
+  <div class="wrap">
+    <div class="cta-box reveal">
+      <span class="eyebrow">사전예약</span>
+      <h2>가장 먼저, 냉장고에 붙여보실래요?</h2>
+      <p>이메일을 남겨주시면 출시 소식과 얼리버드 혜택을 가장 먼저 전해드려요.</p>
+      <div class="cta-form">
+        <input type="email" placeholder="이메일 주소" aria-label="이메일 주소" id="email">
+        <button class="btn amber" id="waitlist">신청하기</button>
+      </div>
+      <p class="cta-mini" id="ctaMini">우리 가족 이야기, 여기서부터 →</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="index.html"><span class="dot"></span>Edgeline3D</a>
+        <p style="margin-top:14px;max-width:30ch;font-size:.9rem">물리적 추억을 살아있는 디지털 기억으로. 미주 한인 가족을 위한 NFC 메모리 마그넷.</p>
+      </div>
+      <div class="foot-links">
+        <div class="foot-col">
+          <h4>제품</h4>
+          <a href="#how">사용법</a>
+          <a href="#keep">담는 것</a>
+          <a href="#price">가격</a>
+        </div>
+        <div class="foot-col">
+          <h4>회사</h4>
+          <a href="#why">한인 가족을 위해</a>
+          <a href="#cta">사전예약</a>
+          <a href="#top">문의하기</a>
+        </div>
+        <div class="foot-col">
+          <h4>정책</h4>
+          <a href="#top">개인정보 처리방침</a>
+          <a href="#top">이용약관</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Edgeline3D · Memory Magnet</span>
+      <span>memory.daldabangus.com</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Tap-to-open magnet (touch/keyboard); hover handled by CSS on desktop
+  const stage = document.getElementById('stage');
+  const toggle = () => stage.classList.toggle('is-open');
+  stage.addEventListener('click', toggle);
+  stage.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+  });
+
+  // Scroll reveal
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(en => { if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, { threshold: 0.14 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // Waitlist (front-end only demo)
+  const wl = document.getElementById('waitlist');
+  const email = document.getElementById('email');
+  const mini = document.getElementById('ctaMini');
+  wl.addEventListener('click', () => {
+    const v = (email.value || '').trim();
+    if (v && /.+@.+\..+/.test(v)) {
+      mini.textContent = '신청 완료! 소식 가장 먼저 전해드릴게요 ✦';
+      email.value = '';
+    } else {
+      mini.textContent = '이메일 주소를 확인해 주세요 :)';
+      email.focus();
+    }
+  });
+</script>
+</body>
+</html>
