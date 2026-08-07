@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edgeline3D — 3D Printing × NFC</title>
+<meta name="description" content="Edgeline3D designs and 3D-prints custom objects with NFC chips built in — keepsakes, tags, and smart products that link to the cloud with a single tap.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bed:#E7E3DA;
+    --bed-2:#DED9CC;
+    --card:#F4F2EA;
+    --ink:#15130D;
+    --ink-2:#413C31;
+    --panel:#151109;
+    --signal:#2D34E8;
+    --signal-2:#4B51FF;
+    --line:#CBC4B4;
+    --line-dk:rgba(231,227,218,.16);
+    --maxw:1160px;
+    --disp:'Space Grotesk', sans-serif;
+    --mono:'Space Mono', monospace;
+    --body:'Inter', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--body);color:var(--ink);background:var(--bed);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 30px}
+  a{color:inherit;text-decoration:none}
+
+  h1,h2,h3{font-family:var(--disp);font-weight:700;line-height:1.05;letter-spacing:-.02em}
+  .mono{font-family:var(--mono)}
+  .eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;color:var(--signal);text-transform:uppercase}
+
+  .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:.82rem;font-weight:700;
+    letter-spacing:.02em;background:var(--ink);color:var(--bed);border:1.5px solid var(--ink);cursor:pointer;
+    padding:12px 20px;border-radius:2px;transition:transform .14s, background .2s, color .2s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.signal{background:var(--signal);border-color:var(--signal);color:#fff}
+  .btn.signal:hover{background:var(--signal-2);border-color:var(--signal-2)}
+  .btn.ghost{background:transparent;color:var(--ink)}
+  .btn.ghost:hover{background:var(--ink);color:var(--bed)}
+  .btn .arrow{display:inline-block;transition:transform .2s}
+  .btn:hover .arrow{transform:translateX(3px)}
+
+  /* NAV */
+  .nav{position:sticky;top:0;z-index:60;background:rgba(231,227,218,.85);backdrop-filter:blur(9px);border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:70px}
+  .brand{display:flex;align-items:baseline;gap:2px;font-family:var(--disp);font-weight:700;font-size:1.3rem;letter-spacing:-.03em}
+  .brand .edge{color:var(--ink)}
+  .brand .three{color:var(--signal)}
+  .brand .tick{width:9px;height:9px;background:var(--signal);border-radius:50%;margin-left:8px;align-self:center;
+    box-shadow:0 0 0 0 rgba(45,52,232,.5);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(45,52,232,.45)}70%{box-shadow:0 0 0 8px rgba(45,52,232,0)}100%{box-shadow:0 0 0 0 rgba(45,52,232,0)}}
+  .nav-links{display:flex;gap:28px;font-family:var(--mono);font-size:.8rem;letter-spacing:.02em}
+  .nav-links a{color:var(--ink-2);transition:color .2s}
+  .nav-links a:hover{color:var(--signal)}
+  .nav-cta{padding:10px 18px}
+
+  /* HERO */
+  .hero{padding:70px 0 40px;position:relative}
+  .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:40px;align-items:center}
+  .hero h1{font-size:clamp(2.5rem,5.6vw,4.4rem);margin:20px 0 24px}
+  .hero h1 em{font-style:normal;color:var(--signal)}
+  .hero .lead{font-size:1.12rem;color:var(--ink-2);max-width:44ch;margin-bottom:30px}
+  .hero-cta{display:flex;gap:12px;flex-wrap:wrap}
+  .hero-meta{margin-top:34px;display:flex;gap:26px;font-family:var(--mono);font-size:.74rem;color:var(--ink-2);flex-wrap:wrap}
+  .hero-meta span b{color:var(--signal);font-weight:700}
+
+  /* Hero object (printed part building up + NFC signal) */
+  .rig{position:relative;height:420px;display:flex;align-items:center;justify-content:center}
+  .platform{position:absolute;bottom:64px;left:50%;transform:translateX(-50%);width:280px;height:16px;
+    background:linear-gradient(var(--bed-2),#cdc7b6);border-radius:3px;box-shadow:0 10px 24px -12px rgba(0,0,0,.4)}
+  .platform::after{content:"BUILD PLATE";position:absolute;left:0;right:0;bottom:-20px;text-align:center;
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.24em;color:var(--ink-2)}
+  .part-wrap{position:relative;width:180px;height:180px;margin-bottom:80px}
+  .part{position:absolute;inset:0;border-radius:30px;overflow:hidden;
+    background:
+      repeating-linear-gradient(0deg, #24211a 0 1px, transparent 1px 6px),
+      linear-gradient(150deg,#2f2b22,#1c1913);
+    box-shadow:0 24px 40px -18px rgba(0,0,0,.6), inset 0 0 0 1.5px rgba(255,255,255,.06);
+    animation:build 1.5s cubic-bezier(.4,0,.1,1) both;}
+  @keyframes build{0%{clip-path:inset(100% 0 0 0)}100%{clip-path:inset(0 0 0 0)}}
+  .part .coil{position:absolute;inset:0;margin:auto;width:96px;height:96px;border-radius:50%;
+    border:2px solid rgba(75,81,255,.7);box-shadow:inset 0 0 0 8px rgba(75,81,255,.14), 0 0 20px rgba(75,81,255,.25)}
+  .part .coil::after{content:"";position:absolute;inset:16px;border-radius:50%;border:2px solid rgba(75,81,255,.5)}
+  .part .chip{position:absolute;inset:0;margin:auto;width:26px;height:26px;background:var(--signal);border-radius:4px;
+    box-shadow:0 0 16px rgba(75,81,255,.8)}
+  .part .layertag{position:absolute;left:10px;bottom:10px;font-family:var(--mono);font-size:.56rem;color:rgba(231,227,218,.6);letter-spacing:.08em}
+
+  .signal-arc{position:absolute;top:50%;left:50%;width:180px;height:180px;border:2px solid var(--signal);border-radius:50%;
+    transform:translate(-50%,-50%) scale(.5);opacity:0}
+  .rig.live .signal-arc{animation:emit 2.2s ease-out infinite}
+  .rig.live .signal-arc.a2{animation-delay:.7s}
+  .rig.live .signal-arc.a3{animation-delay:1.4s}
+  @keyframes emit{0%{transform:translate(-50%,-50%) scale(.5);opacity:.6}80%{opacity:0}100%{transform:translate(-50%,-50%) scale(1.9);opacity:0}}
+
+  .annot{position:absolute;font-family:var(--mono);font-size:.66rem;color:var(--ink-2);letter-spacing:.02em;white-space:nowrap}
+  .annot::before{content:"";position:absolute;height:1px;background:var(--line)}
+  .annot.tl{top:36px;left:2px}
+  .annot.tl::before{width:34px;right:-42px;top:8px}
+  .annot.tr{top:70px;right:6px;text-align:right}
+  .annot.tr::before{width:34px;left:-42px;top:8px}
+  .annot.br{bottom:120px;right:2px;text-align:right}
+  .annot.br::before{width:30px;left:-38px;top:8px}
+  .annot b{color:var(--signal)}
+  .tap-cue{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:.7rem;
+    color:var(--signal);letter-spacing:.06em;cursor:pointer;user-select:none;border:1px solid var(--signal);padding:6px 12px;border-radius:2px;background:rgba(45,52,232,.06);transition:background .2s}
+  .tap-cue:hover{background:rgba(45,52,232,.14)}
+
+  /* SPEC STRIP */
+  .spec{background:var(--ink);color:var(--bed);overflow:hidden;white-space:nowrap;padding:13px 0}
+  .spec .track{display:inline-flex;gap:36px;font-family:var(--mono);font-size:.8rem;letter-spacing:.04em;animation:scroll 30s linear infinite}
+  .spec .track span{color:rgba(231,227,218,.85)}
+  .spec .track .s{color:var(--signal-2)}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* SECTION */
+  .section{padding:96px 0}
+  .kicker{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--signal)}
+  .sec-head{max-width:60ch}
+  .sec-head h2{font-size:clamp(2rem,4vw,3rem);margin:8px 0 16px}
+  .sec-head p{color:var(--ink-2);font-size:1.06rem;max-width:52ch}
+
+  /* CAPABILITIES */
+  .caps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:52px}
+  .cap{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:30px 26px;position:relative;transition:transform .25s,box-shadow .25s}
+  .cap:hover{transform:translateY(-5px);box-shadow:0 22px 40px -24px rgba(0,0,0,.4)}
+  .cap .id{font-family:var(--mono);font-size:.72rem;color:var(--signal);margin-bottom:18px}
+  .cap .ic{width:46px;height:46px;color:var(--ink);margin-bottom:16px}
+  .cap .ic svg{width:100%;height:100%}
+  .cap h3{font-size:1.32rem;margin-bottom:9px}
+  .cap p{color:var(--ink-2);font-size:.96rem}
+
+  /* PROCESS */
+  .process{background:var(--panel);color:var(--bed)}
+  .process .eyebrow{color:var(--signal-2)}
+  .process .sec-head h2{color:var(--card)}
+  .process .sec-head p{color:rgba(231,227,218,.72)}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:56px}
+  .node{position:relative;padding:0 22px 0 0}
+  .node .n{font-family:var(--mono);font-size:.76rem;color:var(--signal-2);margin-bottom:16px}
+  .node .bar{height:2px;background:var(--line-dk);position:relative;margin-bottom:20px}
+  .node .bar::before{content:"";position:absolute;left:0;top:0;height:2px;width:38%;background:var(--signal)}
+  .node .bar::after{content:"";position:absolute;left:calc(38% - 4px);top:-3px;width:8px;height:8px;border-radius:50%;background:var(--signal);box-shadow:0 0 10px rgba(75,81,255,.8)}
+  .node h3{font-size:1.28rem;color:var(--card);margin-bottom:9px}
+  .node p{color:rgba(231,227,218,.66);font-size:.92rem;padding-right:6px}
+
+  /* APPLICATIONS */
+  .apps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:52px}
+  .app{background:var(--bed);padding:32px 28px;min-height:190px;display:flex;flex-direction:column;transition:background .25s}
+  .app:hover{background:var(--card)}
+  .app .tag{font-family:var(--mono);font-size:.68rem;color:var(--signal);letter-spacing:.06em;margin-bottom:auto}
+  .app h3{font-size:1.24rem;margin:20px 0 8px}
+  .app p{color:var(--ink-2);font-size:.92rem}
+
+  /* FLAGSHIP */
+  .flag{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;
+    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:46px;margin-top:8px}
+  .flag .eyebrow{color:var(--signal)}
+  .flag h2{font-size:clamp(1.8rem,3.4vw,2.6rem);margin:14px 0 14px}
+  .flag p{color:var(--ink-2);margin-bottom:24px;max-width:44ch}
+  .flag-vis{position:relative;height:260px;border-radius:8px;background:radial-gradient(circle at 50% 45%, #2c2820, #171410);
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .flag-mag{width:130px;height:130px;border-radius:26px;background:linear-gradient(150deg,#FDFAF3,#EDE2CF);
+    box-shadow:0 18px 34px -14px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;
+    font-family:var(--disp);font-weight:700;color:#2B2620;font-size:.9rem;text-align:center;line-height:1.2}
+  .flag-vis .ring{position:absolute;width:130px;height:130px;border-radius:26px;border:2px solid rgba(75,81,255,.6);animation:emit 2.6s ease-out infinite}
+
+  /* WHY */
+  .why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:36px;margin-top:52px}
+  .why-item{border-top:2px solid var(--ink);padding-top:20px}
+  .why-item .num{font-family:var(--mono);font-size:.74rem;color:var(--signal);margin-bottom:14px}
+  .why-item h3{font-size:1.3rem;margin-bottom:10px}
+  .why-item p{color:var(--ink-2);font-size:.96rem}
+
+  /* CTA */
+  .cta{padding:0 0 100px}
+  .cta-box{background:var(--ink);color:var(--bed);border-radius:12px;padding:64px 48px;text-align:center;position:relative;overflow:hidden}
+  .cta-box::before{content:"";position:absolute;top:-40%;left:50%;transform:translateX(-50%);width:460px;height:460px;
+    background:radial-gradient(circle,rgba(45,52,232,.28),transparent 62%)}
+  .cta-box .eyebrow{color:var(--signal-2);position:relative}
+  .cta-box h2{font-size:clamp(2rem,4.2vw,3.2rem);margin:14px 0 16px;color:var(--card);position:relative}
+  .cta-box p{color:rgba(231,227,218,.74);max-width:46ch;margin:0 auto 30px;position:relative}
+  .cta-box .btn{position:relative}
+  .cta-contact{margin-top:26px;font-family:var(--mono);font-size:.82rem;color:rgba(231,227,218,.7);position:relative}
+  .cta-contact a{color:var(--signal-2)}
+
+  /* FOOTER */
+  footer{background:var(--bed-2);border-top:1px solid var(--line);padding:54px 0 40px}
+  .foot-grid{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap}
+  .foot-lead{max-width:30ch}
+  .foot-lead p{font-size:.9rem;color:var(--ink-2);margin-top:14px}
+  .foot-links{display:flex;gap:56px;flex-wrap:wrap}
+  .foot-col h4{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin-bottom:14px}
+  .foot-col a{display:block;font-size:.94rem;margin-bottom:9px;color:var(--ink);transition:color .2s}
+  .foot-col a:hover{color:var(--signal)}
+  .foot-base{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:.74rem;color:var(--ink-2)}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  @media(max-width:960px){
+    .hero-grid{grid-template-columns:1fr;gap:20px}
+    .rig{order:-1;height:360px}
+    .caps,.flow,.apps,.why-grid{grid-template-columns:1fr}
+    .flow{gap:34px}
+    .node{padding:0}
+    .apps{gap:1px}
+    .flag{grid-template-columns:1fr}
+    .flag-vis{order:-1;height:220px}
+    .nav-links{display:none}
+    .annot{display:none}
+  }
+  @media(max-width:560px){
+    .caps,.apps{grid-template-columns:1fr}
+    .wrap{padding:0 22px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important}
+    .part{clip-path:none !important}
+    .reveal{opacity:1;transform:none;transition:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top"><span class="edge">Edgeline</span><span class="three">3D</span><span class="tick"></span></a>
+    <div class="nav-links">
+      <a href="#what">What we do</a>
+      <a href="#process">Process</a>
+      <a href="#apps">Applications</a>
+      <a href="#flagship">Products</a>
+    </div>
+    <a href="#cta" class="btn signal nav-cta">Start a project</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">[ 3D printing × NFC ]</span>
+      <h1>Physical products,<br>one tap from <em>digital</em>.</h1>
+      <p class="lead">Edgeline3D designs and 3D-prints custom objects with NFC chips built in — keepsakes, tags, and smart products that link to the cloud the moment someone taps them with a phone.</p>
+      <div class="hero-cta">
+        <a href="#cta" class="btn signal">Start a project <span class="arrow">→</span></a>
+        <a href="#what" class="btn ghost">See what we make</a>
+      </div>
+      <div class="hero-meta">
+        <span><b>CAD</b> → to → <b>encoded product</b></span>
+        <span>MOQ <b>1</b></span>
+        <span>in-house <b>PETG / PLA</b></span>
+      </div>
+    </div>
+
+    <div class="rig" id="rig">
+      <div class="annot tl">NTAG216 · <b>13.56&nbsp;MHz</b></div>
+      <div class="annot tr">Ø30&nbsp;mm coil<br>+ ferrite shield</div>
+      <div class="annot br">PETG · <b>0.20&nbsp;mm</b> layer</div>
+      <div class="platform"></div>
+      <div class="part-wrap">
+        <span class="signal-arc a1"></span><span class="signal-arc a2"></span><span class="signal-arc a3"></span>
+        <div class="part">
+          <span class="coil"></span>
+          <span class="chip"></span>
+          <span class="layertag">LAYER 148 / 148</span>
+        </div>
+      </div>
+      <div class="tap-cue" id="tapCue" role="button" tabindex="0">◈ TAP TO ENCODE</div>
+    </div>
+  </div>
+</header>
+
+<!-- SPEC STRIP -->
+<div class="spec" aria-hidden="true">
+  <div class="track">
+    <span class="s">◈</span><span>NTAG216</span><span class="s">◈</span><span>13.56 MHz</span><span class="s">◈</span><span>924 B user memory</span><span class="s">◈</span><span>PETG / PLA / TPU</span><span class="s">◈</span><span>0.20 mm layer</span><span class="s">◈</span><span>snap-fit housing</span><span class="s">◈</span><span>URL-encoded</span><span class="s">◈</span>
+    <span class="s">◈</span><span>NTAG216</span><span class="s">◈</span><span>13.56 MHz</span><span class="s">◈</span><span>924 B user memory</span><span class="s">◈</span><span>PETG / PLA / TPU</span><span class="s">◈</span><span>0.20 mm layer</span><span class="s">◈</span><span>snap-fit housing</span><span class="s">◈</span><span>URL-encoded</span><span class="s">◈</span>
+  </div>
+</div>
+
+<!-- WHAT WE DO -->
+<section class="section" id="what">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker"><span class="eyebrow">What we do</span></div>
+      <h2>We build the whole object — surface to signal.</h2>
+      <p>Most projects mean juggling a printer, a chip supplier, and a web developer. We do all three under one roof, so the part, the tag, and the page it opens are designed to work together.</p>
+    </div>
+    <div class="caps">
+      <div class="cap reveal">
+        <div class="id">01 / DESIGN</div>
+        <div class="ic"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 40 24 8l16 32z"/><path d="M8 40h32M17 24h14"/></svg></div>
+        <h3>Design &amp; prototyping</h3>
+        <p>From a sketch or an idea to a working CAD model, engineered around the chip, the coil, and the magnet from day one.</p>
+      </div>
+      <div class="cap reveal">
+        <div class="id">02 / MANUFACTURE</div>
+        <div class="ic"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="6" width="28" height="10" rx="2"/><path d="M24 16v10M18 26h12l4 16H14z"/></svg></div>
+        <h3>3D printing &amp; small batch</h3>
+        <p>In-house additive manufacturing in PETG, PLA, and TPU. From a single prototype to production runs of hundreds.</p>
+      </div>
+      <div class="cap reveal">
+        <div class="id">03 / CONNECT</div>
+        <div class="ic"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><circle cx="24" cy="24" r="4"/><path d="M15 15a13 13 0 0 0 0 18M33 15a13 13 0 0 1 0 18M9 9a21 21 0 0 0 0 30M39 9a21 21 0 0 1 0 30"/></svg></div>
+        <h3>NFC integration &amp; web</h3>
+        <p>Embedded NTAG chips, encoding, and the web layer each tap opens — the page, link, or record that makes the object smart.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section class="section process" id="process">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker"><span class="eyebrow">Process</span></div>
+      <h2>Four steps, one team.</h2>
+      <p>The same people carry a project from the first CAD sketch to a tag that opens a live page.</p>
+    </div>
+    <div class="flow">
+      <div class="node reveal">
+        <div class="n">STEP 01</div><div class="bar"></div>
+        <h3>Design</h3>
+        <p>Model the housing around the NFC coil, ferrite shield, and magnets so the part performs and prints cleanly.</p>
+      </div>
+      <div class="node reveal">
+        <div class="n">STEP 02</div><div class="bar"></div>
+        <h3>Print</h3>
+        <p>Additive manufacturing, layer by layer, in durable materials chosen for the object's job and finish.</p>
+      </div>
+      <div class="node reveal">
+        <div class="n">STEP 03</div><div class="bar"></div>
+        <h3>Embed</h3>
+        <p>Seat the chip and shielding, snap the housing shut. No visible seams, no glue, no re-opening.</p>
+      </div>
+      <div class="node reveal">
+        <div class="n">STEP 04</div><div class="bar"></div>
+        <h3>Encode &amp; deploy</h3>
+        <p>Program each tag to its URL and stand up the page it opens — editable long after the object ships.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APPLICATIONS -->
+<section class="section" id="apps">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker"><span class="eyebrow">Applications</span></div>
+      <h2>A printed object can do a lot more than sit there.</h2>
+      <p>Anywhere a physical thing should carry a link, a record, or a story, an embedded tag turns it into a doorway.</p>
+    </div>
+    <div class="apps">
+      <div class="app reveal"><span class="tag">KEEPSAKES</span><h3>Gifts &amp; mementos</h3><p>Objects that hold photos, voices, and video — like our Memory Magnet keepsake.</p></div>
+      <div class="app reveal"><span class="tag">AUTHENTICITY</span><h3>Product tags</h3><p>Anti-counterfeit and provenance tags that verify a product with a tap.</p></div>
+      <div class="app reveal"><span class="tag">EVENTS</span><h3>Badges &amp; giveaways</h3><p>Smart badges, cards, and promo pieces that link to schedules, profiles, or offers.</p></div>
+      <div class="app reveal"><span class="tag">RETAIL</span><h3>Packaging &amp; drops</h3><p>Tap-for-info packaging and limited runs that unlock content or registration.</p></div>
+      <div class="app reveal"><span class="tag">CREATIVE</span><h3>Art &amp; objects</h3><p>Sculptures and pieces with a hidden digital layer — a statement, a track, a link.</p></div>
+      <div class="app reveal"><span class="tag">MAKERS</span><h3>Prototypes</h3><p>Fast, low-volume runs for startups testing a connected physical product.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FLAGSHIP -->
+<section class="section" id="flagship" style="padding-top:0">
+  <div class="wrap">
+    <div class="flag reveal">
+      <div>
+        <span class="eyebrow">Flagship product</span>
+        <h2>Memory Magnet</h2>
+        <p>Our first consumer product: a fridge magnet you tap to open a family's photos, voice, and video. It's Edgeline3D's approach made tangible — a printed object with a digital soul, built for Korean-American families.</p>
+        <a href="#" class="btn ghost">View Memory Magnet <span class="arrow">→</span></a>
+      </div>
+      <div class="flag-vis">
+        <span class="ring"></span>
+        <div class="flag-mag">Our<br>Memory</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section class="section process" id="why" style="background:var(--bed-2);color:var(--ink)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker"><span class="eyebrow" style="color:var(--signal)">Why Edgeline3D</span></div>
+      <h2 style="color:var(--ink)">One partner from the first layer to the last tap.</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why-item reveal">
+        <div class="num">/ 01</div>
+        <h3>End to end, in-house</h3>
+        <p>CAD, printing, chip, encoding, and the web page — one team, one timeline, no vendor hand-offs.</p>
+      </div>
+      <div class="why-item reveal">
+        <div class="num">/ 02</div>
+        <h3>Built for small batches</h3>
+        <p>Minimum order of one. Prototype it, tap it, refine it, then scale — without tooling costs up front.</p>
+      </div>
+      <div class="why-item reveal">
+        <div class="num">/ 03</div>
+        <h3>The digital layer, included</h3>
+        <p>We don't just hand you a tagged object. We build and host the experience each tap opens.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="wrap">
+    <div class="cta-box reveal">
+      <span class="eyebrow">Start a project</span>
+      <h2>Have an object that should do more?</h2>
+      <p>Tell us what you want to make. We'll figure out the design, the material, and the tap — and send you a plan.</p>
+      <a href="mailto:hello@edgeline3d.com" class="btn signal">Get in touch <span class="arrow">→</span></a>
+      <p class="cta-contact"><a href="mailto:hello@edgeline3d.com">hello@edgeline3d.com</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-lead">
+        <a class="brand" href="#top"><span class="edge">Edgeline</span><span class="three">3D</span></a>
+        <p>3D printing meets NFC. We make physical products that connect to the digital world with a single tap.</p>
+      </div>
+      <div class="foot-links">
+        <div class="foot-col">
+          <h4>Studio</h4>
+          <a href="#what">What we do</a>
+          <a href="#process">Process</a>
+          <a href="#apps">Applications</a>
+        </div>
+        <div class="foot-col">
+          <h4>Products</h4>
+          <a href="#flagship">Memory Magnet</a>
+          <a href="#cta">Custom work</a>
+        </div>
+        <div class="foot-col">
+          <h4>Contact</h4>
+          <a href="mailto:hello@edgeline3d.com">hello@edgeline3d.com</a>
+          <a href="#cta">Start a project</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 EDGELINE3D</span>
+      <span>ADDITIVE MANUFACTURING × NFC</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Hero: trigger NFC "encode" signal on tap
+  const rig = document.getElementById('rig');
+  const cue = document.getElementById('tapCue');
+  const go = () => {
+    rig.classList.add('live');
+    cue.textContent = '✓ ENCODED → LINKED';
+    setTimeout(() => { rig.classList.remove('live'); cue.textContent = '◈ TAP TO ENCODE'; }, 4600);
+  };
+  cue.addEventListener('click', go);
+  cue.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){e.preventDefault();go();} });
+
+  // Scroll reveal
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target);} });
+  },{threshold:.14});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
